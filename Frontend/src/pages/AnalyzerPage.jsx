@@ -89,38 +89,58 @@ function RiskBar({ score }) {
 }
 
 /* ═══════════════════════════════════════════
-   DRAG & DROP UPLOAD AREA
+   DRAG & DROP UPLOAD AREA (connected to backend)
 ═══════════════════════════════════════════ */
-function UploadArea() {
+function UploadArea({ file, setFile, preview, setPreview }) {
   const [drag, setDrag] = useState(false)
+  const inputRef = { current: null }
+
+  const handleFile = (f) => {
+    if (!f || !f.type.startsWith('image/')) return
+    setFile(f)
+    setPreview(URL.createObjectURL(f))
+  }
+
   return (
     <div
+      onClick={() => document.getElementById('image-file-input').click()}
       onDragOver={e => { e.preventDefault(); setDrag(true) }}
       onDragLeave={() => setDrag(false)}
-      onDrop={e => { e.preventDefault(); setDrag(false) }}
+      onDrop={e => { e.preventDefault(); setDrag(false); handleFile(e.dataTransfer.files[0]) }}
       className={`border-2 border-dashed rounded-[14px] p-7 text-center transition-all duration-200 cursor-pointer ${
         drag ? 'border-emerald-500 bg-emerald-500/5' : 'border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-white/5'
       }`}
-      id="image-uploader-placeholder"
+      id="image-uploader"
     >
-      <div className="text-[32px] mb-2.5">📂</div>
-      <p className="text-[14px] font-semibold text-slate-700 dark:text-slate-300 mb-1 transition-colors">
-        Drag & Drop Files Here
-      </p>
-      <p className="text-[12px] text-slate-500 dark:text-slate-500 mb-3.5 transition-colors">
-        Screenshots, Email exports, Chat PDFs
-      </p>
-      <div className="flex justify-center gap-1.5 flex-wrap">
-        {['PNG', 'JPG', 'PDF', 'TXT'].map(fmt => (
+      <input
+        id="image-file-input"
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={e => handleFile(e.target.files[0])}
+      />
+      {preview ? (
+        <img src={preview} alt="Preview"
+          className="max-h-[180px] mx-auto rounded-lg object-contain mb-2" />
+      ) : (
+        <>
+          <div className="text-[32px] mb-2.5">📷</div>
+          <p className="text-[14px] font-semibold text-slate-700 dark:text-slate-300 mb-1 transition-colors">
+            Drag & Drop Screenshot Here
+          </p>
+          <p className="text-[12px] text-slate-500 dark:text-slate-500 mb-3.5 transition-colors">
+            SMS, WhatsApp, Email, UPI screenshots
+          </p>
+        </>
+      )}
+      <div className="flex justify-center gap-1.5 flex-wrap mt-2">
+        {['PNG', 'JPG', 'WEBP'].map(fmt => (
           <span key={fmt} className="px-2 py-1 bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded-full text-[11px] font-semibold transition-colors">{fmt}</span>
         ))}
       </div>
-      <label className="inline-flex items-center gap-1.5 mt-3.5 cursor-pointer">
-        <input type="file" accept=".png,.jpg,.jpeg,.pdf,.txt" className="hidden"/>
-        <span className="px-4 py-1.5 rounded-lg text-[12px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 transition-colors">
-          Browse Files
-        </span>
-      </label>
+      <span className="inline-block mt-3.5 px-4 py-1.5 rounded-lg text-[12px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 transition-colors">
+        {file ? `✓ ${file.name}` : 'Browse Files'}
+      </span>
     </div>
   )
 }
@@ -128,11 +148,15 @@ function UploadArea() {
 /* ═══════════════════════════════════════════
    RESULTS PANEL
 ═══════════════════════════════════════════ */
-function ResultsPanel({ result, onReset }) {
+function ResultsPanel({ result, onReset, isDemo = false }) {
   const score = result.risk_score
   const isCritical = score >= 75
   const isSuspicious = score >= 40 && score < 75
   const accentColor = isCritical ? '#EF4444' : isSuspicious ? '#F59E0B' : '#22C55E'
+  const severity = result.severity || (isCritical ? 'Critical' : isSuspicious ? 'Suspicious' : 'Safe')
+  const confidence = result.confidence || null
+  const indicators = result.indicators || []
+  const ai_explanation = result.ai_explanation || null
 
   return (
     <motion.div key="results" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -151,17 +175,17 @@ function ResultsPanel({ result, onReset }) {
           </div>
           <div className="ml-auto">
             <span className={`badge ${isCritical ? 'badge-danger' : isSuspicious ? 'badge-warning' : 'badge-success'} text-[13px] px-3.5 py-1.5 transition-colors`}>
-              {result.severity}
+              {severity}
             </span>
           </div>
         </div>
 
         {/* Grid: scores */}
-        <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className={`grid gap-3 mb-5 ${confidence ? 'grid-cols-3' : 'grid-cols-2'}`}>
           {[
-            { label: 'Risk Score',      value: `${score}%`,           color: accentColor },
-            { label: 'Confidence',      value: `${result.confidence}%`, color: '#06B6D4' },
-            { label: 'Threat Type',     value: result.scam_type,      color: '#F59E0B' },
+            { label: 'Risk Score',  value: `${score}/100`,      color: accentColor },
+            ...(confidence ? [{ label: 'Confidence', value: `${confidence}%`, color: '#06B6D4' }] : []),
+            { label: 'Threat Type', value: result.scam_type || 'Unknown', color: '#F59E0B' },
           ].map(m => (
             <div key={m.label} className="p-3.5 rounded-[10px] bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 transition-colors">
               <div className="text-[11px] text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-widest transition-colors">{m.label}</div>
@@ -173,27 +197,31 @@ function ResultsPanel({ result, onReset }) {
         <RiskBar score={score} />
       </div>
 
-      {/* AI Explanation */}
-      <div className="card p-5 transition-colors duration-300">
-        <h4 className="text-[14px] font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2 transition-colors">
-          <span className="text-[16px]">🤖</span> AI Explanation
-        </h4>
-        <p className="text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed transition-colors">
-          {result.ai_explanation}
-        </p>
-      </div>
-
-      {/* Threat Indicators */}
-      <div className="card p-5 transition-colors duration-300">
-        <h4 className="text-[14px] font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2 transition-colors">
-          <span className="text-[16px]">🏷️</span> Threat Indicators
-        </h4>
-        <div className="flex flex-wrap gap-2">
-          {result.indicators.map(ind => (
-            <span key={ind} className="badge badge-danger">{ind}</span>
-          ))}
+      {/* AI Explanation — only if available */}
+      {ai_explanation && (
+        <div className="card p-5 transition-colors duration-300">
+          <h4 className="text-[14px] font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2 transition-colors">
+            <span className="text-[16px]">🤖</span> AI Explanation
+          </h4>
+          <p className="text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed transition-colors">
+            {ai_explanation}
+          </p>
         </div>
-      </div>
+      )}
+
+      {/* Threat Indicators — only if available */}
+      {indicators.length > 0 && (
+        <div className="card p-5 transition-colors duration-300">
+          <h4 className="text-[14px] font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2 transition-colors">
+            <span className="text-[16px]">🏷️</span> Threat Indicators
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {indicators.map(ind => (
+              <span key={ind} className="badge badge-danger">{ind}</span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Red Flags */}
       <div className="card p-5 transition-colors duration-300">
@@ -248,20 +276,81 @@ export default function AnalyzerPage() {
   const [result,     setResult]     = useState(null)
   const [loading,    setLoading]    = useState(false)
   const [error,      setError]      = useState('')
-  const [imageResult, setImageResult] = useState(null)
+  const [imageFile,  setImageFile]  = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+  const [isDemo,     setIsDemo]     = useState(false)
 
-  const displayResult = result || imageResult
+  const displayResult = result
 
   const handleScan = async () => {
     setError('')
+    setIsDemo(false)
     if (activeTab === 'message' && !textInput.trim()) { setError('Please enter a message to analyze.'); return }
     if (activeTab === 'url'     && !urlInput.trim())  { setError('Please enter a URL to scan.'); return }
+    if (activeTab === 'image'   && !imageFile)        { setError('Please upload an image first.'); return }
+
     setResult(null)
     setLoading(true)
-    setTimeout(() => { setResult(DEMO_RESULT); setLoading(false) }, 1800)
+
+    if (activeTab === 'image') {
+      try {
+        const formData = new FormData()
+        formData.append('file', imageFile)
+        const res = await fetch('/api/analyze-image?lang=en', {
+          method: 'POST',
+          body: formData,
+        })
+        if (!res.ok) throw new Error(`Server error: ${res.status}`)
+        const data = await res.json()
+        setIsDemo(false)
+        setResult(data)
+      } catch (err) {
+        // Backend unavailable — show demo result with a clear demo banner inside the report
+        setIsDemo(true)
+        setResult(DEMO_RESULT)
+      } finally {
+        setLoading(false)
+      }
+    } else if (activeTab === 'message') {
+      try {
+        const res = await fetch('/api/analyze-text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: textInput, lang: 'en' }),
+        })
+        if (!res.ok) throw new Error(`Server error: ${res.status}`)
+        const data = await res.json()
+        setIsDemo(false)
+        setResult(data)
+      } catch {
+        // Message Analysis: AI failed — show demo banner inside the results card
+        setIsDemo(true)
+        setResult(DEMO_RESULT)
+      } finally {
+        setLoading(false)
+      }
+    } else if (activeTab === 'url') {
+      try {
+        const res = await fetch('/api/analyze-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: urlInput, lang: 'en' }),
+        })
+        if (!res.ok) throw new Error(`Server error: ${res.status}`)
+        const data = await res.json()
+        setIsDemo(false)
+        setResult(data)
+      } catch {
+        // URL Scanner: AI failed — show demo banner inside the results card
+        setIsDemo(true)
+        setResult(DEMO_RESULT)
+      } finally {
+        setLoading(false)
+      }
+    }
   }
 
-  const reset = () => { setResult(null); setImageResult(null); setTextInput(''); setUrlInput(''); setError('') }
+  const reset = () => { setResult(null); setTextInput(''); setUrlInput(''); setImageFile(null); setImagePreview(null); setError(''); setIsDemo(false) }
 
   const isHttp = urlInput.startsWith('http://') && !urlInput.startsWith('https://')
 
@@ -382,7 +471,14 @@ export default function AnalyzerPage() {
                     )}
 
                     {/* Image Tab */}
-                    {activeTab === 'image' && <UploadArea />}
+                    {activeTab === 'image' && (
+                      <UploadArea
+                        file={imageFile}
+                        setFile={setImageFile}
+                        preview={imagePreview}
+                        setPreview={setImagePreview}
+                      />
+                    )}
 
                     {/* Error */}
                     {error && (
@@ -432,7 +528,7 @@ export default function AnalyzerPage() {
                   )}
                 </motion.div>
               ) : (
-                <ResultsPanel result={displayResult} onReset={reset} />
+                <ResultsPanel result={displayResult} onReset={reset} isDemo={isDemo} />
               )}
             </AnimatePresence>
           </div>
