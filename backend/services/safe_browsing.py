@@ -4,12 +4,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SAFE_BROWSING_API_KEY = os.getenv("SAFE_BROWSING_API_KEY")
+def scan_url(url: str):
+    if url.startswith("http://"):
+        protocol_warning = True
+    else:
+        protocol_warning = False
 
-
-def scan_url(url):
-
-    protocol_warning = url.startswith("http://")
+    api_key = os.getenv('SAFE_BROWSING_API_KEY')
+    if not api_key:
+        return {"error": "SAFE_BROWSING_API_KEY is missing from environment"}
 
     body = {
         "client": {
@@ -17,11 +20,7 @@ def scan_url(url):
             "clientVersion": "1.0"
         },
         "threatInfo": {
-            "threatTypes": [
-                "MALWARE",
-                "SOCIAL_ENGINEERING",
-                "UNWANTED_SOFTWARE"
-            ],
+            "threatTypes": ["MALWARE", "SOCIAL_ENGINEERING"],
             "platformTypes": ["ANY_PLATFORM"],
             "threatEntryTypes": ["URL"],
             "threatEntries": [
@@ -32,26 +31,12 @@ def scan_url(url):
 
     try:
         response = requests.post(
-            f"https://safebrowsing.googleapis.com/v4/threatMatches:find?key={SAFE_BROWSING_API_KEY}",
-            json=body,
-            timeout=10
+            f"https://safebrowsing.googleapis.com/v4/threatMatches:find?key={api_key}",
+            json=body
         )
-
-        data = response.json()
-
         return {
-            "url": url,
             "unsafe_protocol": protocol_warning,
-            "safe": "matches" not in data,
-            "threats": data.get("matches", [])
+            "google_result": response.json()
         }
-        
-
     except Exception as e:
-        return {
-            "url": url,
-            "unsafe_protocol": protocol_warning,
-            "error": str(e)
-        }
-    
-print("SAFE BROWSING KEY =", SAFE_BROWSING_API_KEY)
+        return {"error": str(e)}
