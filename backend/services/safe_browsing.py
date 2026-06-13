@@ -1,30 +1,57 @@
+import requests
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+SAFE_BROWSING_API_KEY = os.getenv("SAFE_BROWSING_API_KEY")
+
+
 def scan_url(url):
 
-    risk_score = 0
-    warnings = []
+    protocol_warning = url.startswith("http://")
 
-    if url.startswith("http://"):
-        risk_score += 50
-        warnings.append("Uses insecure HTTP connection")
-
-    suspicious_domains = [
-        "bit.ly",
-        "tinyurl",
-        "shorturl",
-        "t.ly"
-    ]
-
-    if any(domain in url.lower() for domain in suspicious_domains):
-        risk_score += 30
-        warnings.append("Uses shortened URL")
-
-    if "@" in url:
-        risk_score += 20
-        warnings.append("Contains @ symbol in URL")
-
-    return {
-        "url": url,
-        "risk_score": risk_score,
-        "warnings": warnings,
-        "safe": risk_score < 50
+    body = {
+        "client": {
+            "clientId": "scamshield",
+            "clientVersion": "1.0"
+        },
+        "threatInfo": {
+            "threatTypes": [
+                "MALWARE",
+                "SOCIAL_ENGINEERING",
+                "UNWANTED_SOFTWARE"
+            ],
+            "platformTypes": ["ANY_PLATFORM"],
+            "threatEntryTypes": ["URL"],
+            "threatEntries": [
+                {"url": url}
+            ]
+        }
     }
+
+    try:
+        response = requests.post(
+            f"https://safebrowsing.googleapis.com/v4/threatMatches:find?key={SAFE_BROWSING_API_KEY}",
+            json=body,
+            timeout=10
+        )
+
+        data = response.json()
+
+        return {
+            "url": url,
+            "unsafe_protocol": protocol_warning,
+            "safe": "matches" not in data,
+            "threats": data.get("matches", [])
+        }
+        
+
+    except Exception as e:
+        return {
+            "url": url,
+            "unsafe_protocol": protocol_warning,
+            "error": str(e)
+        }
+    
+print("SAFE BROWSING KEY =", SAFE_BROWSING_API_KEY)
