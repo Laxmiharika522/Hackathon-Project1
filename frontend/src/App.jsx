@@ -6,7 +6,8 @@ import Navbar from './components/Navbar'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import AnalyzerPage from './pages/AnalyzerPage'
-import { DashboardPage, EncyclopediaPage } from './pages/PlaceholderPages'
+import Dashboard from './pages/Dashboard'
+import Encyclopedia from './pages/Encyclopedia'
 
 function AppLayout() {
   const [lang, setLang] = useState('en')
@@ -17,8 +18,8 @@ function AppLayout() {
       <Navbar lang={lang} onLangToggle={toggleLang} />
       <Routes>
         <Route path="/" element={<AnalyzerPage />} />
-        <Route path="/dashboard" element={<DashboardPage lang={lang} />} />
-        <Route path="/encyclopedia" element={<EncyclopediaPage lang={lang} />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/encyclopedia" element={<Encyclopedia />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
