@@ -53,14 +53,6 @@ const GitHubIcon = () => (
   </svg>
 )
 
-const MicrosoftIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 21 21">
-    <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
-    <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
-    <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
-    <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
-  </svg>
-)
 
 /* ─── Hero Illustration ─── */
 function CyberIllustration() {
@@ -427,15 +419,12 @@ export default function LoginPage() {
             </div>
 
             {/* Social Login Options */}
-            <div className="grid grid-cols-3 gap-4">
-              <button type="button" className="h-14 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/10 transition-colors flex items-center justify-center text-slate-700 dark:text-white">
-                <GoogleIcon />
+            <div className="grid grid-cols-2 gap-4">
+              <button type="button" className="h-14 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/10 transition-colors flex items-center justify-center gap-2 text-sm font-semibold text-slate-700 dark:text-white">
+                <GoogleIcon /> Google
               </button>
-              <button type="button" className="h-14 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/10 transition-colors flex items-center justify-center text-slate-700 dark:text-white">
-                <GitHubIcon />
-              </button>
-              <button type="button" className="h-14 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/10 transition-colors flex items-center justify-center text-slate-700 dark:text-white">
-                <MicrosoftIcon />
+              <button type="button" className="h-14 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/10 transition-colors flex items-center justify-center gap-2 text-sm font-semibold text-slate-700 dark:text-white">
+                <GitHubIcon /> GitHub
               </button>
             </div>
 
