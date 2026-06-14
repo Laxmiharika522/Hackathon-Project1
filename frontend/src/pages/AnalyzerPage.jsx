@@ -93,7 +93,6 @@ function RiskBar({ score }) {
 ═══════════════════════════════════════════ */
 function UploadArea({ file, setFile, preview, setPreview }) {
   const [drag, setDrag] = useState(false)
-  const inputRef = { current: null }
 
   const handleFile = (f) => {
     if (!f || !f.type.startsWith('image/')) return
